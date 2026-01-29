@@ -1,8 +1,8 @@
-import express from "express";
-import { createCheckoutSession } from "../controllers/stripeController.js";
+import Stripe from "stripe";
 
-const router = express.Router();
-
-router.post("/checkout", createCheckoutSession);
-
-export default router;
+export const createStripe = () => {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("Stripe key missing");
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY);
+};
