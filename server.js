@@ -9,14 +9,10 @@ import productRoutes from "./routes/productRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import stripeRoutes from "./routes/stripeRoutes.js";
 
-// ESM dirname fix
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load env ONLY in local development
-if (process.env.NODE_ENV !== "production") {
-  dotenv.config({ path: path.join(__dirname, ".env") });
-}
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
 
@@ -31,15 +27,18 @@ app.use("/api/stripe", stripeRoutes);
 
 // Health check
 app.get("/", (req, res) => {
-  res.status(200).send("API Running...");
+  res.status(200).json({ message: "API running on Vercel 🚀" });
 });
 
-// Connect DB
-connectDB();
+// DB connection (safe for serverless)
+let isConnected = false;
+const connectOnce = async () => {
+  if (!isConnected) {
+    await connectDB();
+    isConnected = true;
+  }
+};
+connectOnce();
 
-// ✅ IMPORTANT: use dynamic PORT (Vercel requirement)
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// 🚫 DO NOT use app.listen() on Vercel
+export default app;
