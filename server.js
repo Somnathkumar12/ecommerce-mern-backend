@@ -1,13 +1,6 @@
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// 🔥 Explicit env load (Node 22 + Windows + ESM)
-dotenv.config({ path: path.join(__dirname, ".env") });
-
 import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
@@ -15,6 +8,15 @@ import connectDB from "./config/db.js";
 import productRoutes from "./routes/productRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import stripeRoutes from "./routes/stripeRoutes.js";
+
+// ESM dirname fix
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load env ONLY in local development
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config({ path: path.join(__dirname, ".env") });
+}
 
 const app = express();
 
@@ -27,16 +29,17 @@ app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/stripe", stripeRoutes);
 
-// Test route
+// Health check
 app.get("/", (req, res) => {
-  res.send("API Running...");
+  res.status(200).send("API Running...");
 });
 
-// DB
+// Connect DB
 connectDB();
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
-  console.log("MONGO_URI:", process.env.MONGO_URI);
-  console.log("STRIPE KEY:", process.env.STRIPE_SECRET_KEY);
+// ✅ IMPORTANT: use dynamic PORT (Vercel requirement)
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
